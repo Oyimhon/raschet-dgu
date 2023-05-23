@@ -1,132 +1,332 @@
-import { multiply, matrix } from 'mathjs';
+import { useForm, Controller } from 'react-hook-form';
+import {
+  Box,
+  TextField,
+  Typography,
+  Button,
+  Grid,
+  Stack,
+  Container,
+} from '@mui/material';
 import { useState } from 'react';
-import './App.css';
+
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import teal from '@mui/material/colors/teal';
+
+const theme = createTheme({
+  palette: {
+    primary: teal,
+  },
+});
 
 function App() {
-  function calculateIntensity(
-    distance,
-    extinctionCoefficient,
-    initialIntensity
-  ) {
-    // Расчет интенсивности света по закону Бугера-Ламберта-Бэра
-    const intensity =
-      initialIntensity * Math.exp(-extinctionCoefficient * distance);
-    return intensity;
-  }
+  const [result, setResult] = useState(0);
+  const { control, handleSubmit } = useForm({
+    defaultValues: {
+      alpha: 45,
+      L: 10,
+      R0: 100,
+      Rsh: 50,
+      N: 1000,
+      H: 1,
+      J: 10,
+      T: 300,
+      r: 1,
+      mu: 0.5,
+      c: 299792458,
+      q: Math.exp(1.602e-19),
+      k: Math.exp(1.38e-23),
+    },
+  });
+  const onSubmit = (data) => {
+    const { alpha, N, q, R0, Rsh, k, T, H, J, L, mu, r, c } = data;
+    // Преобразование угла освещенности из градусов в радианы
+    var alphaRad = (alpha * Math.PI) / 180;
 
-  // Пример использования функции calculateIntensity
-  // const distance = 10; // Расстояние, которое пройдет свет через среду (в метрах)
-  // const extinctionCoefficient = 0.1; // Коэффициент затухания света (в 1/м)
-  // const initialIntensity = 100; // Начальная интенсивность света
-  const [distance, setDistance] = useState('10');
-  const [extinctionCoefficient, setExtinctionCoefficient] = useState('0.1');
-  const [initialIntensity, setInitialIntensity] = useState('100');
+    // Расчет значений выражений
+    var temp1 = (N * q * (R0 + Rsh)) / (2 * k * T); // значение подвыражения в скобках (2.2)
+    var temp2 = (H * J * alphaRad * L * mu) / (r * c); // значение подвыражения в скобках (2.3)
+    var expValue = Math.exp(temp1) - 1; // значение выражения (Math.exp(temp1) - 1)
+    var resultLoc = temp2 / expValue; // итоговый результат
 
-  const handleChange = ({ target }) => {
-    const { value, name } = target;
-    if (name === 'distance') {
-      setDistance(value);
-    }
-    if (name === 'extinctionCoefficient') {
-      setExtinctionCoefficient(value);
-    }
-    if (name === 'initialIntensity') {
-      setInitialIntensity(value);
-    }
-  };
-
-  // Функция для преобразования оптического сигнала в электрический
-  function photodetector(
-    distance,
-    extinctionCoefficient,
-    initialIntensity,
-    opticalSystem,
-    QE
-  ) {
-    const intensity = calculateIntensity(
-      distance,
-      extinctionCoefficient,
-      initialIntensity
-    );
-
-    // Применение коэффициента квантовой эффективности
-    const QEintensity = intensity * QE;
-
-    // Применение коэффициента ответа фотоприемника
-    const response = multiply(opticalSystem, QEintensity);
-
-    return response;
-  }
-
-  // Пример использования функции photodetector
-  const opticalSystem = matrix([
-    [0.5, 0.5],
-    [0.5, 0.5]
-  ]);
-
-  const QE = 0.8;
-
-  // const response = photodetector(
-  //   distance,
-  //   extinctionCoefficient,
-  //   initialIntensity,
-  //   opticalSystem,
-  //   QE
-  // );
-
-  const [response, setResponse] = useState('');
-  const handleSubmit = () => {
-    const result = photodetector(
-      distance,
-      extinctionCoefficient,
-      initialIntensity,
-      opticalSystem,
-      QE
-    );
-
-    setResponse(result);
+    // Вывод результата
+    setResult(resultLoc);
   };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Рассчет преобразования оптического сигнала в электрический</h1>
-        <label htmlFor="distance">
-          Расстояние, которое пройдет свет через среду (в метрах)
-        </label>
-        <input
-          type="text"
-          id="distance"
-          onChange={handleChange}
-          name="distance"
-        />
-        <br />
-        <label htmlFor="extinctionCoefficient">
-          Коэффициент затухания света (в 1/м)
-        </label>
-        <input
-          type="text"
-          id="extinctionCoefficient"
-          onChange={handleChange}
-          name="extinctionCoefficient"
-        />
-        <br />
-        <label htmlFor="initialIntensity">Начальная интенсивность света</label>
-        <input
-          type="text"
-          id="initialIntensity"
-          onChange={handleChange}
-          name="initialIntensity"
-        />
-        <br />
-        <button onClick={handleSubmit}>Рассчитать</button>
+    <ThemeProvider theme={theme}>
+      <Box
+        className="App"
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          backgroundColor: 'lightcyan',
+        }}
+      >
+        <Container
+          style={{
+            padding: '20px',
+            textAlign: 'center',
+          }}
+        >
+          <Typography
+            component={'h1'}
+            fontSize={'40px'}
+            lineHeight={'45px'}
+            mb="25px"
+          >
+            Рассчет преобразования оптического сигнала в электрический
+          </Typography>
 
-        <br />
-        <br />
+          <Stack
+            spacing={'15px'}
+            component={'form'}
+            onSubmit={handleSubmit(onSubmit)}
+          >
+            <Grid
+              container
+              spacing={'15px'}
+              display={'flex'}
+              justifyContent={'center'}
+            >
+              <Grid item xs={4}>
+                <Controller
+                  name="alpha"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      type="number"
+                      id="alpha"
+                      label="Угол освещенности в градусах"
+                      onChange={{}}
+                      style={{ width: '100%' }}
+                      {...field}
+                    />
+                  )}
+                />
+              </Grid>
 
-        {response && <h3>Результат: {response?._data[0][0]}</h3>}
-      </header>
-    </div>
+              <Grid item xs={4}>
+                <Controller
+                  name="L"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      type="number"
+                      id="L"
+                      label="Длина диффузии"
+                      onChange={{}}
+                      style={{ width: '100%' }}
+                      {...field}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={4}>
+                <Controller
+                  name="R0"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      type="number"
+                      id="R0"
+                      label="Сопротивление электронно-дырочных переходов"
+                      onChange={{}}
+                      style={{ width: '100%' }}
+                      {...field}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={4}>
+                <Controller
+                  name="Rsh"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      type="number"
+                      id="Rsh"
+                      label="Сопротивление фото-шунта"
+                      onChange={{}}
+                      style={{ width: '100%' }}
+                      {...field}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={4}>
+                <Controller
+                  name="N"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      type="number"
+                      id="N"
+                      label="Концентрация основных носителей заряда"
+                      onChange={{}}
+                      style={{ width: '100%' }}
+                      {...field}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={4}>
+                <Controller
+                  name="H"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      type="number"
+                      id="H"
+                      label="Напряженность магнитного поля"
+                      onChange={{}}
+                      style={{ width: '100%' }}
+                      {...field}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={4}>
+                <Controller
+                  name="J"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      type="number"
+                      id="J"
+                      label="Интенсивность света"
+                      onChange={{}}
+                      style={{ width: '100%' }}
+                      {...field}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={4}>
+                <Controller
+                  name="T"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      type="number"
+                      id="T"
+                      label="Температура"
+                      onChange={{}}
+                      style={{ width: '100%' }}
+                      {...field}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={4}>
+                <Controller
+                  name="r"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      type="number"
+                      id="r"
+                      label="Время жизни носителя заряда"
+                      onChange={{}}
+                      style={{ width: '100%' }}
+                      {...field}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={4}>
+                <Controller
+                  name="mu"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      type="number"
+                      id="mu"
+                      label="Подвижность зарядов"
+                      onChange={{}}
+                      style={{ width: '100%' }}
+                      {...field}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={4}>
+                <Controller
+                  name="q"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      type="number"
+                      disabled
+                      id="q"
+                      label="Значение единичного заряда в Кл (константа)"
+                      style={{ width: '100%' }}
+                      onChange={{}}
+                      {...field}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={4}>
+                <Controller
+                  name="k"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      type="number"
+                      disabled
+                      id="k"
+                      label="Постоянная Больцмана в Дж/К (константа)"
+                      style={{ width: '100%' }}
+                      onChange={{}}
+                      {...field}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={4}>
+                <Controller
+                  name="c"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      type="number"
+                      disabled
+                      id="c"
+                      label="Скорость света в м/с (константа)"
+                      style={{ width: '100%' }}
+                      onChange={{}}
+                      {...field}
+                    />
+                  )}
+                />
+              </Grid>
+            </Grid>
+            <Button
+              variant="contained"
+              type="submit"
+              onClick={handleSubmit(onSubmit)}
+            >
+              Рассчитать
+            </Button>
+            {result > 0 && <Typography>{result}</Typography>}
+          </Stack>
+        </Container>
+      </Box>
+    </ThemeProvider>
   );
 }
 
